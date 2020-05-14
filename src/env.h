@@ -925,11 +925,6 @@ class Environment : public MemoryRetainer {
 
   inline IsolateData* isolate_data() const;
 
-  inline char* Allocate(size_t size);
-  inline char* AllocateUnchecked(size_t size);
-  char* Reallocate(char* data, size_t old_size, size_t size);
-  inline void Free(char* data, size_t size);
-
   inline bool printed_error() const;
   inline void set_printed_error(bool value);
 
@@ -1216,6 +1211,9 @@ class Environment : public MemoryRetainer {
   void RunAndClearNativeImmediates(bool only_refed = false);
   void RunAndClearInterrupts();
 
+  inline std::unordered_map<char*, std::unique_ptr<v8::BackingStore>>*
+      released_allocated_buffers();
+
  private:
   template <typename Fn>
   inline void CreateImmediate(Fn&& cb, bool ref);
@@ -1378,6 +1376,11 @@ class Environment : public MemoryRetainer {
   // We should probably find a way to just use plain `v8::String`s created from
   // the source passed to LoadEnvironment() directly instead.
   std::unique_ptr<v8::String::Value> main_utf16_;
+
+  // Used by AllocatedBuffer::release() to keep track of the BackingStore for
+  // a given pointer.
+  std::unordered_map<char*, std::unique_ptr<v8::BackingStore>>
+      released_allocated_buffers_;
 };
 
 }  // namespace node
